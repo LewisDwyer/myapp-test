@@ -7,6 +7,8 @@ require("./instrument.js");
 const Sentry = require("@sentry/node");
 const express = require("express");
 
+const port = process.env.PORT || 4000;
+
 const app = express();
 
 // All your controllers should live here
@@ -39,4 +41,6 @@ app.use(function onError(err, req, res, next) {
   res.end(res.sentry + "\n");
 });
 
-app.listen(3000);
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`)
+})
