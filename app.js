@@ -23,7 +23,7 @@ app.get("/overload", function overloadHandler(req, res) {
     return fibonacci(n - 1) + fibonacci(n - 2);
   }
 
-  const result = fibonacci(40); 
+  const result = fibonacci(40); // This will take a while!
   res.end(`Fibonacci result: ${result}`);
 });
 
