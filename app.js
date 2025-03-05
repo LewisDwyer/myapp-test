@@ -82,6 +82,18 @@ app.use(function onError(err, req, res, next) {
   res.end(res.sentry + "\n");
 });
 
+// Global error handling for uncaught exceptions and unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  Sentry.captureException(reason);
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  Sentry.captureException(error);
+  console.error('Uncaught Exception thrown:', error);
+  process.exit(1); // Optional: exit the process after handling the exception
+});
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
