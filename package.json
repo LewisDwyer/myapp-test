@@ -4,11 +4,13 @@
   "description": "myapp",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1 && npm run sentry:sourcemaps && npm run sentry:sourcemaps",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org example-test-7c --project node ./node_modules && sentry-cli sourcemaps upload --org example-test-7c --project node ./node_modules"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@sentry/cli": "^2.42.2",
     "@sentry/node": "^9.3.0",
     "@sentry/profiling-node": "^9.3.0",
     "express": "^4.21.2"
