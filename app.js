@@ -5,6 +5,8 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { Worker } = require('worker_threads');
 const path = require('path');
+const Queue = require('bull');
+
 
 const port = process.env.PORT || 4000;
 
@@ -43,16 +45,30 @@ app.get("/debug-sentry", function mainHandler(req, res) {
   throw new Error("My first Sentry error!");
 });
 
-app.get("/overload", function overloadHandler(req, res) {
+const fibonacciQueue = new Queue('fibonacci');
+
+fibonacciQueue.process((job, done) => {
   const worker = new Worker(path.resolve(__dirname, 'fiboWorker.js'));
   worker.on('message', (result) => {
-    res.end(`Fibonacci result: ${result}`);
+    done(null, result);
   });
   worker.on('error', (error) => {
     Sentry.captureException(error);
+    done(error);
+  });
+  worker.postMessage(job.data.n);
+});
+
+app.get("/overload", function overloadHandler(req, res) {
+  fibonacciQueue.add({ n: 40 }).then((job) => {
+    job.finished().then((result) => {
+      res.end(`Fibonacci result: ${result}`);
+    }).catch((error) => {
+      res.status(500).end('Internal Server Error');
+    });
+  }).catch((error) => {
     res.status(500).end('Internal Server Error');
   });
-  worker.postMessage(40);
 });
 
 // Specific rate limiter for the /overload endpoint
