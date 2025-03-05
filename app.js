@@ -3,6 +3,8 @@ require("./instrument.js");
 const Sentry = require("@sentry/node");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
+const { Worker } = require('worker_threads');
+const path = require('path');
 
 const port = process.env.PORT || 4000;
 
@@ -40,13 +42,15 @@ app.get("/debug-sentry", function mainHandler(req, res) {
 });
 
 app.get("/overload", function overloadHandler(req, res) {
-  function fibonacci(n) {
-    if (n <= 1) return n;
-    return fibonacci(n - 1) + fibonacci(n - 2);
-  }
-
-  const result = fibonacci(40); // This will take a while!
-  res.end(`Fibonacci result: ${result}`);
+  const worker = new Worker(path.resolve(__dirname, 'fiboWorker.js'));
+  worker.on('message', (result) => {
+    res.end(`Fibonacci result: ${result}`);
+  });
+  worker.on('error', (error) => {
+    Sentry.captureException(error);
+    res.status(500).end('Internal Server Error');
+  });
+  worker.postMessage(40);
 });
 
 // Specific rate limiter for the /overload endpoint
