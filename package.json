@@ -13,6 +13,7 @@
     "@sentry/cli": "^2.42.2",
     "@sentry/node": "^9.3.0",
     "@sentry/profiling-node": "^9.3.0",
+    "bull": "^4.16.5",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0"
   }
