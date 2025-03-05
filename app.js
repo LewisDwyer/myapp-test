@@ -47,6 +47,9 @@ Sentry.setupExpressErrorHandler(app);
 
 // Optional fallthrough error handler
 app.use(function onError(err, req, res, next) {
+
+  Sentry.captureException(err);
+
   // The error id is attached to `res.sentry` to be returned
   // and optionally displayed to the user for support.
   res.statusCode = 500;
