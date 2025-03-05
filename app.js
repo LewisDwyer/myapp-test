@@ -18,13 +18,12 @@ app.get("/debug-sentry", function mainHandler(req, res) {
 });
 
 app.get("/overload", function overloadHandler(req, res) {
-  // Perform a CPU-intensive task by calculating Fibonacci numbers
   function fibonacci(n) {
     if (n <= 1) return n;
     return fibonacci(n - 1) + fibonacci(n - 2);
   }
 
-  const result = fibonacci(40); // Adjust the number to increase/decrease the load
+  const result = fibonacci(40); 
   res.end(`Fibonacci result: ${result}`);
 });
 
