@@ -24,7 +24,7 @@ app.use((req, res, next) => {
 });
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 1 * 60 * 1000,
   max: 10, // Limit each IP to 10 requests per `window` 
   message: "Too many requests from this IP, please try again later."
 });
@@ -49,8 +49,19 @@ app.get("/overload", function overloadHandler(req, res) {
   res.end(`Fibonacci result: ${result}`);
 });
 
+// Specific rate limiter for the /overload endpoint
+const overloadLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 5, // Limit each IP to 5 requests per `window`
+  message: "Too many requests to the /overload endpoint, please try again later."
+});
+
+
 // The error handler must be registered before any other error middleware and after all controllers
 Sentry.setupExpressErrorHandler(app);
+
+// Apply the overload rate limiter to the /overload endpoint
+app.use("/overload", overloadLimiter);
 
 app.use(limiter);
 
