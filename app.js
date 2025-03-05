@@ -2,6 +2,7 @@ require("./instrument.js");
 
 const Sentry = require("@sentry/node");
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 
 const port = process.env.PORT || 4000;
 
@@ -20,6 +21,12 @@ app.use((req, res, next) => {
     }
   });
   next();
+});
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per `window` 
+  message: "Too many requests from this IP, please try again later."
 });
 
 // All your controllers should live here
@@ -44,6 +51,8 @@ app.get("/overload", function overloadHandler(req, res) {
 
 // The error handler must be registered before any other error middleware and after all controllers
 Sentry.setupExpressErrorHandler(app);
+
+app.use(limiter);
 
 // Optional fallthrough error handler
 app.use(function onError(err, req, res, next) {
