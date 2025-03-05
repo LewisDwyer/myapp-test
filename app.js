@@ -1,9 +1,5 @@
-// IMPORTANT: Make sure to import `instrument.js` at the top of your file.
-// If you're using ECMAScript Modules (ESM) syntax, use `import "./instrument.js";`
 require("./instrument.js");
 
-// All other imports below
-// Import with `import * as Sentry from "@sentry/node"` if you are using ESM
 const Sentry = require("@sentry/node");
 const express = require("express");
 
@@ -22,12 +18,14 @@ app.get("/debug-sentry", function mainHandler(req, res) {
 });
 
 app.get("/overload", function overloadHandler(req, res) {
-  // Perform a CPU-intensive task
-  const start = Date.now();
-  while (Date.now() - start < 5000) {
-    // Busy-wait for 5 seconds
+  // Perform a CPU-intensive task by calculating Fibonacci numbers
+  function fibonacci(n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
   }
-  res.end("Server overloaded!");
+
+  const result = fibonacci(40); // Adjust the number to increase/decrease the load
+  res.end(`Fibonacci result: ${result}`);
 });
 
 // The error handler must be registered before any other error middleware and after all controllers
