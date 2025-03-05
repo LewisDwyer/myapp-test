@@ -9,7 +9,18 @@ Sentry.init({
   ],
   // Tracing
   tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  profilesSampleRate: 1.0, // Capture 100% of the profiles
 });
+
+// Capture unhandled promise rejections and uncaught exceptions
+process.on('unhandledRejection', (reason, promise) => {
+  Sentry.captureException(reason);
+});
+
+process.on('uncaughtException', (error) => {
+  Sentry.captureException(error);
+});
+
 // Manually call startProfiler and stopProfiler
 // to profile the code in between
 Sentry.profiler.startProfiler();
