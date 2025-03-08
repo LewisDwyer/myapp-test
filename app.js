@@ -14,21 +14,6 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-// Middleware to capture slow requests
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    if (duration > 1000) { // Adjust the threshold as needed
-      Sentry.captureMessage(`Slow request: ${req.method} ${req.url} took ${duration}ms`, {
-        level: 'warning',
-        extra: { duration, method: req.method, url: req.url }
-      });
-    }
-  });
-  next();
-});
-
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 10, // Limit each IP to 10 requests per `window` 
@@ -81,6 +66,21 @@ const overloadLimiter = rateLimit({
 
 // The error handler must be registered before any other error middleware and after all controllers
 Sentry.setupExpressErrorHandler(app);
+
+// Middleware to capture slow requests
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (duration > 1000) { // Adjust the threshold as needed
+      Sentry.captureMessage(`Slow request: ${req.method} ${req.url} took ${duration}ms`, {
+        level: 'warning',
+        extra: { duration, method: req.method, url: req.url }
+      });
+    }
+  });
+  next();
+});
 
 // Apply the overload rate limiter to the /overload endpoint
 app.use("/overload", overloadLimiter);
