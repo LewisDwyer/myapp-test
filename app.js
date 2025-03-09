@@ -61,7 +61,11 @@ const fibonacciQueue = new Queue('fibonacci');
 fibonacciQueue.process((job, done) => {
   const worker = new Worker(path.resolve(__dirname, 'fiboWorker.js'));
   worker.on('message', (result) => {
-    done(null, result);
+    if (result.error) {
+      done(new Error(result.error));
+    } else {
+      done(null, result);
+    }
   });
   worker.on('error', (error) => {
     Sentry.captureException(error);
