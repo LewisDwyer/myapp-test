@@ -3,10 +3,7 @@ require("./instrument.js");
 const Sentry = require("@sentry/node");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
-const { Worker } = require('worker_threads');
 const path = require('path');
-const Queue = require('bull');
-
 
 const port = process.env.PORT || 4000;
 
@@ -16,7 +13,7 @@ app.set('trust proxy', 1);
 
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 10, // Limit each IP to 10 requests per `window` 
+  max: 10, // Limit each IP to 10 requests per `window`
   message: "Too many requests from this IP, please try again later."
 });
 
@@ -56,30 +53,10 @@ app.get("/debug-sentry", function mainHandler(req, res) {
   throw new Error("My first Sentry error!");
 });
 
-const fibonacciQueue = new Queue('fibonacci');
-
-fibonacciQueue.process((job, done) => {
-  const worker = new Worker(path.resolve(__dirname, 'fiboWorker.js'));
-  worker.on('message', (result) => {
-    if (result.error) {
-      done(new Error(result.error));
-    } else {
-      done(null, result);
-    }
-  });
-  worker.on('error', (error) => {
-    Sentry.captureException(error);
-    done(error);
-  });
-  worker.on('exit', (code) => {
-    if (code !== 0) {
-      const error = new Error(`Worker stopped with exit code ${code}`);
-      Sentry.captureException(error);
-      done(error);
-    }
-  });
-  worker.postMessage(job.data.n);
-});
+function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
 
 app.get("/overload", function overloadHandler(req, res) {
   const n = parseInt(req.query.n, 10);
@@ -87,15 +64,12 @@ app.get("/overload", function overloadHandler(req, res) {
     return res.status(400).end('Invalid input');
   }
 
-  fibonacciQueue.add({ n }).then((job) => {
-    job.finished().then((result) => {
-      res.end(`Fibonacci result: ${result}`);
-    }).catch((error) => {
-      res.status(500).end(`Internal Server Error: ${error.message}`);
-    });
-  }).catch((error) => {
+  try {
+    const result = fibonacci(n);
+    res.end(`Fibonacci result: ${result}`);
+  } catch (error) {
     res.status(500).end(`Internal Server Error: ${error.message}`);
-  });
+  }
 });
 
 // Specific rate limiter for the /overload endpoint
@@ -104,7 +78,6 @@ const overloadLimiter = rateLimit({
   max: 5, // Limit each IP to 5 requests per `window`
   message: "Too many requests to the /overload endpoint, please try again later."
 });
-
 
 // The error handler must be registered before any other error middleware and after all controllers
 Sentry.setupExpressErrorHandler(app);
@@ -131,7 +104,6 @@ app.use(limiter);
 
 // Optional fallthrough error handler
 app.use(function onError(err, req, res, next) {
-
   Sentry.captureException(err);
 
   // The error id is attached to `res.sentry` to be returned
