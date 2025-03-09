@@ -23,7 +23,33 @@ const limiter = rateLimit({
 // All your controllers should live here
 
 app.get("/", function rootHandler(req, res) {
-  res.end("Hello world!");
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get("/calculate", function calculateHandler(req, res) {
+  const { operation, num1, num2 } = req.query;
+  const n1 = parseFloat(num1);
+  const n2 = parseFloat(num2);
+  let result;
+
+  switch (operation) {
+    case 'add':
+      result = n1 + n2;
+      break;
+    case 'subtract':
+      result = n1 - n2;
+      break;
+    case 'multiply':
+      result = n1 * n2;
+      break;
+    case 'divide':
+      result = n1 / n2;
+      break;
+    default:
+      return res.status(400).json({ error: 'Invalid operation' });
+  }
+
+  res.json({ result });
 });
 
 app.get("/debug-sentry", function mainHandler(req, res) {
