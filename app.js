@@ -71,7 +71,12 @@ fibonacciQueue.process((job, done) => {
 });
 
 app.get("/overload", function overloadHandler(req, res) {
-  fibonacciQueue.add({ n: 40 }).then((job) => {
+  const n = parseInt(req.query.n, 10);
+  if (isNaN(n) || n < 0) {
+    return res.status(400).end('Invalid input');
+  }
+
+  fibonacciQueue.add({ n }).then((job) => {
     job.finished().then((result) => {
       res.end(`Fibonacci result: ${result}`);
     }).catch((error) => {
