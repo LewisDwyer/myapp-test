@@ -67,6 +67,13 @@ fibonacciQueue.process((job, done) => {
     Sentry.captureException(error);
     done(error);
   });
+  worker.on('exit', (code) => {
+    if (code !== 0) {
+      const error = new Error(`Worker stopped with exit code ${code}`);
+      Sentry.captureException(error);
+      done(error);
+    }
+  });
   worker.postMessage(job.data.n);
 });
 
@@ -80,10 +87,10 @@ app.get("/overload", function overloadHandler(req, res) {
     job.finished().then((result) => {
       res.end(`Fibonacci result: ${result}`);
     }).catch((error) => {
-      res.status(500).end('Internal Server Error');
+      res.status(500).end(`Internal Server Error: ${error.message}`);
     });
   }).catch((error) => {
-    res.status(500).end('Internal Server Error');
+    res.status(500).end(`Internal Server Error: ${error.message}`);
   });
 });
 

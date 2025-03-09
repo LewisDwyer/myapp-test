@@ -6,6 +6,10 @@ function fibonacci(n) {
 }
 
 parentPort.on('message', (n) => {
-  const result = fibonacci(n);
-  parentPort.postMessage(result);
+  try {
+    const result = fibonacci(n);
+    parentPort.postMessage(result);
+  } catch (error) {
+    parentPort.postMessage({ error: error.message });
+  }
 });
