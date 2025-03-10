@@ -1,7 +1,6 @@
 require("./instrument.js");
 
 const Sentry = require("@sentry/node");
-const Tracing = require("@sentry/tracing");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const path = require('path');
@@ -11,17 +10,6 @@ const port = process.env.PORT || 4000;
 const app = express();
 
 app.set('trust proxy', 1);
-
-Sentry.init({
-  dsn: "https://e5ae49b092d3568c0e56c1eeb58ff6f9@o4508924865019904.ingest.de.sentry.io/4508924867641424",
-  integrations: [
-    // Enable HTTP calls tracing
-    new Sentry.Integrations.Http({ tracing: true }),
-    // Enable Express.js middleware tracing
-    new Tracing.Integrations.Express({ app }),
-  ],
-  tracesSampleRate: 1.0, // Adjust this value in production
-});
 
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
@@ -93,30 +81,26 @@ const overloadLimiter = rateLimit({
 
 // The error handler must be registered before any other error middleware and after all controllers
 Sentry.setupExpressErrorHandler(app);
-// Request handler must be the first middleware on the app
-app.use(Sentry.Handlers.requestHandler());
-// Tracing handler must be before any other middleware
-app.use(Sentry.Handlers.tracingHandler());
-// Middleware to capture slow requests
 
-// app.use((req, res, next) => {
-//   const start = Date.now();
-//   res.on('finish', () => {
-//     const duration = Date.now() - start;
-//     if (duration > 1000) { // Adjust the threshold as needed
-//       Sentry.captureMessage(`Slow request: ${req.method} ${req.url} took ${duration}ms`, {
-//         level: 'warning',
-//         extra: { duration, method: req.method, url: req.url }
-//       });
-//     }
-//   });
-//   next();
-// });
+// Middleware to capture slow requests
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (duration > 1000) { // Adjust the threshold as needed
+      Sentry.captureMessage(`Slow request: ${req.method} ${req.url} took ${duration}ms`, {
+        level: 'warning',
+        extra: { duration, method: req.method, url: req.url }
+      });
+    }
+  });
+  next();
+});
 
 // Apply the overload rate limiter to the /overload endpoint
-// app.use("/overload", overloadLimiter);
+app.use("/overload", overloadLimiter);
 
-// app.use(limiter);
+app.use(limiter);
 
 // Optional fallthrough error handler
 app.use(function onError(err, req, res, next) {
