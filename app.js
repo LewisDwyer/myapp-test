@@ -74,8 +74,13 @@ app.get("/overload", function overloadHandler(req, res) {
 });
 
 app.get('/dependency-issue', async (req, res) => {
+  try {
     const response = await axios.get('https://invalid.url');
     res.send(response.data);
+  } catch (error) {
+    Sentry.captureException(error);
+    res.status(500).send('Dependency issue: Third-party service is down');
+  }
 });
 
 // Specific rate limiter for the /overload endpoint
