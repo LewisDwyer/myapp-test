@@ -75,7 +75,7 @@ app.get("/overload", function overloadHandler(req, res) {
 
 app.get('/dependency-issue', async (req, res) => {
   try {
-    const response = await axios.get('https://invalid.url');
+    const response = await axios.get('https://testapp.free.beeceptor.com');
     res.send(response.data);
   } catch (error) {
     Sentry.captureException(error);
