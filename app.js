@@ -4,6 +4,7 @@ const Sentry = require("@sentry/node");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const path = require('path');
+const axios = require('axios');
 
 const port = process.env.PORT || 4000;
 
@@ -70,6 +71,11 @@ app.get("/overload", function overloadHandler(req, res) {
   } catch (error) {
     res.status(500).end(`Internal Server Error: ${error.message}`);
   }
+});
+
+app.get('/dependency-issue', async (req, res) => {
+    const response = await axios.get('https://invalid.url');
+    res.send(response.data);
 });
 
 // Specific rate limiter for the /overload endpoint
