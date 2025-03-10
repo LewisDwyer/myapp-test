@@ -17,6 +17,8 @@
     "axios": "^1.8.2",
     "bull": "^4.16.5",
     "express": "^4.21.2",
-    "express-rate-limit": "^7.5.0"
+    "express-rate-limit": "^7.5.0",
+    "sequelize": "^6.37.6",
+    "sqlite3": "^5.1.7"
   }
 }

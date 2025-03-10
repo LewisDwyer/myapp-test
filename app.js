@@ -5,6 +5,8 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const path = require('path');
 const axios = require('axios');
+const sequelize = require('./database');
+const Calculation = require('./models/Calculation');
 
 const port = process.env.PORT || 4000;
 
@@ -18,17 +20,44 @@ const limiter = rateLimit({
   message: "Too many requests from this IP, please try again later."
 });
 
+// Middleware to parse JSON bodies
+app.use(express.json());
+
+// Sync database
+sequelize.sync().then(() => {
+  console.log('Database synced');
+});
+
 // All your controllers should live here
 
 app.get("/", function rootHandler(req, res) {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get("/calculate", function calculateHandler(req, res) {
+app.get("/calculate", async function calculateHandler(req, res) {
   const { operation, num1, num2 } = req.query;
   const n1 = parseFloat(num1);
   const n2 = parseFloat(num2);
   let result;
+
+  // Check if the calculation has already been performed by the same IP
+  try {
+    const existingCalculation = await Calculation.findOne({
+      where: {
+        ipAddress: req.ip,
+        operation,
+        num1: n1,
+        num2: n2
+      }
+    });
+
+    if (existingCalculation) {
+      return res.status(400).json({ error: 'Calculation already performed, try a different one' });
+    }
+  } catch (error) {
+    Sentry.captureException(error);
+    return res.status(500).json({ error: 'Failed to check existing calculation' });
+  }
 
   switch (operation) {
     case 'add':
@@ -45,6 +74,20 @@ app.get("/calculate", function calculateHandler(req, res) {
       break;
     default:
       return res.status(400).json({ error: 'Invalid operation' });
+  }
+
+  // Store the calculation in the database
+  try {
+    await Calculation.create({
+      ipAddress: req.ip,
+      operation,
+      num1: n1,
+      num2: n2,
+      result
+    });
+  } catch (error) {
+    Sentry.captureException(error);
+    return res.status(500).json({ error: 'Failed to store calculation' });
   }
 
   res.json({ result });
