@@ -87,7 +87,7 @@ app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
-    if (duration > 1000) { // Adjust the threshold as needed
+    if (duration > 500) { // Adjust the threshold as needed
       Sentry.captureMessage(`Slow request: ${req.method} ${req.url} took ${duration}ms`, {
         level: 'warning',
         extra: { duration, method: req.method, url: req.url }
