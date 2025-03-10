@@ -40,18 +40,16 @@ app.get("/calculate", async function calculateHandler(req, res) {
   const n2 = parseFloat(num2);
   let result;
 
+  // Vulnerable SQL query
+  const query = `SELECT * FROM Calculations WHERE ipAddress = '${req.ip}' AND operation = '${operation}' AND num1 = ${n1} AND num2 = ${n2}`;
+
   // Check if the calculation has already been performed by the same IP
   try {
-    const existingCalculation = await Calculation.findOne({
-      where: {
-        ipAddress: req.ip,
-        operation,
-        num1: n1,
-        num2: n2
-      }
+    const existingCalculation = await sequelize.query(query, {
+      type: sequelize.QueryTypes.SELECT
     });
 
-    if (existingCalculation) {
+    if (existingCalculation.length > 0) {
       return res.status(400).json({ error: 'Calculation already performed, try a different one' });
     }
   } catch (error) {
